@@ -386,6 +386,46 @@
 
   .highlighted { background: #fffbe6; }
 
+  /* ── REPORT SUB-PANELS ── */
+  .report-sub-panel {
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-top: -4px;
+    margin-bottom: 4px;
+  }
+  .report-sub-heading {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 10px;
+  }
+  .report-sub-panel .field-group {
+    margin-top: 12px;
+    margin-bottom: 0;
+  }
+  .report-sub-panel textarea {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--white);
+    color: var(--ink);
+    resize: vertical;
+    line-height: 1.5;
+    margin-top: 4px;
+  }
+  .report-sub-panel textarea:focus {
+    outline: none;
+    border-color: var(--gold);
+  }
+
   /* ── ENTITY TYPE CARDS ── */
   .entity-grid {
     display: grid;
@@ -582,7 +622,7 @@
     <div class="step-label">Step 1</div>
     <div class="section-title">Entity Type</div>
 
-    <div class="entity-grid">
+    <div class="entity-grid" style="grid-template-columns:1fr 1fr;">
       <div class="entity-card selected" id="ec-company" onclick="selectEntity(this,'company')">
         <span class="ec-icon">🏢</span>
         <span class="ec-label">Company</span>
@@ -592,36 +632,6 @@
         <span class="ec-icon">🤝</span>
         <span class="ec-label">Close Corporation</span>
         <span class="ec-sub">CC — Members</span>
-      </div>
-      <div class="entity-card" id="ec-npo" onclick="selectEntity(this,'npo')">
-        <span class="ec-icon">🌱</span>
-        <span class="ec-label">NPO</span>
-        <span class="ec-sub">Non-Profit Organisation</span>
-      </div>
-      <div class="entity-card" id="ec-trust" onclick="selectEntity(this,'trust')">
-        <span class="ec-icon">⚖️</span>
-        <span class="ec-label">Trust</span>
-        <span class="ec-sub">Trustees</span>
-      </div>
-      <div class="entity-card" id="ec-church" onclick="selectEntity(this,'church')">
-        <span class="ec-icon">⛪</span>
-        <span class="ec-label">Church</span>
-        <span class="ec-sub">Church Council</span>
-      </div>
-      <div class="entity-card" id="ec-school" onclick="selectEntity(this,'school')">
-        <span class="ec-icon">🏫</span>
-        <span class="ec-label">School</span>
-        <span class="ec-sub">Governing Body</span>
-      </div>
-      <div class="entity-card" id="ec-club" onclick="selectEntity(this,'club')">
-        <span class="ec-icon">🏅</span>
-        <span class="ec-label">Club</span>
-        <span class="ec-sub">Committee Members</span>
-      </div>
-      <div class="entity-card" id="ec-bc" onclick="selectEntity(this,'bc')">
-        <span class="ec-icon">🏗️</span>
-        <span class="ec-label">Body Corporate</span>
-        <span class="ec-sub">Trustees</span>
       </div>
     </div>
 
@@ -664,19 +674,103 @@
     <div class="section-title">Report Type</div>
 
     <div class="field-group">
-      <label>Report Type</label>
       <div class="options-group">
         <label class="option-pill">
-          <input type="radio" name="reportType" value="compilation" checked onchange="liveUpdate()"> Independent Compilation
+          <input type="radio" name="reportType" value="compilation" checked onchange="onReportTypeChange()"> Independent Compilation
         </label>
         <label class="option-pill">
-          <input type="radio" name="reportType" value="review" onchange="liveUpdate()"> Independent Review
+          <input type="radio" name="reportType" value="review" onchange="onReportTypeChange()"> Independent Review
         </label>
         <label class="option-pill">
-          <input type="radio" name="reportType" value="audit" onchange="liveUpdate()"> Audit
+          <input type="radio" name="reportType" value="audit" onchange="onReportTypeChange()"> Audit
         </label>
       </div>
-      <p class="hint">Only Compilation is fully implemented in this version.</p>
+    </div>
+
+    <!-- ── AUDIT sub-options ── -->
+    <div id="report-sub-audit" class="report-sub-panel">
+      <div class="report-sub-heading">Audit Opinion</div>
+      <div class="options-group">
+        <label class="option-pill">
+          <input type="radio" name="auditType" value="unqualified" checked onchange="onAuditTypeChange()"> Unqualified
+        </label>
+        <label class="option-pill">
+          <input type="radio" name="auditType" value="qualified" onchange="onAuditTypeChange()"> Qualified
+        </label>
+        <label class="option-pill">
+          <input type="radio" name="auditType" value="emphasis" onchange="onAuditTypeChange()"> Emphasis of Matter
+        </label>
+        <label class="option-pill">
+          <input type="radio" name="auditType" value="disclaimer" onchange="onAuditTypeChange()"> Disclaimer
+        </label>
+        <label class="option-pill">
+          <input type="radio" name="auditType" value="other" onchange="onAuditTypeChange()"> Other Matter
+        </label>
+      </div>
+      <div class="conditional field-group" id="audit-qualified-box">
+        <label>Basis for Qualified Opinion</label>
+        <textarea id="auditQualifiedText" rows="3" placeholder="Describe the basis for the qualified opinion…" oninput="liveUpdate()"></textarea>
+      </div>
+      <div class="conditional field-group" id="audit-emphasis-box">
+        <label>Emphasis of Matter</label>
+        <textarea id="auditEmphasisText" rows="3" placeholder="Describe the emphasis of matter paragraph…" oninput="liveUpdate()"></textarea>
+      </div>
+      <div class="conditional field-group" id="audit-disclaimer-box">
+        <label>Basis for Disclaimer of Opinion</label>
+        <textarea id="auditDisclaimerText" rows="3" placeholder="Describe the basis for the disclaimer of opinion…" oninput="liveUpdate()"></textarea>
+      </div>
+      <div class="conditional field-group" id="audit-other-box">
+        <label>Other Matter</label>
+        <textarea id="auditOtherText" rows="3" placeholder="Describe the other matter paragraph…" oninput="liveUpdate()"></textarea>
+      </div>
+    </div>
+
+    <!-- ── REVIEW sub-options ── -->
+    <div id="report-sub-review" class="report-sub-panel" style="display:none;">
+      <div class="report-sub-heading">Review Conclusion</div>
+      <div class="options-group">
+        <label class="option-pill">
+          <input type="radio" name="reviewType" value="unqualified" checked onchange="onReviewTypeChange()"> Unqualified
+        </label>
+        <label class="option-pill">
+          <input type="radio" name="reviewType" value="qualified" onchange="onReviewTypeChange()"> Qualified
+        </label>
+        <label class="option-pill">
+          <input type="radio" name="reviewType" value="disclaimer" onchange="onReviewTypeChange()"> Disclaimer
+        </label>
+      </div>
+      <div class="conditional field-group" id="review-qualified-box">
+        <label>Basis for Qualified Conclusion</label>
+        <textarea id="reviewQualifiedText" rows="3" placeholder="Describe the basis for the qualified conclusion…" oninput="liveUpdate()"></textarea>
+      </div>
+      <div class="conditional field-group" id="review-disclaimer-box">
+        <label>Basis for Disclaimer</label>
+        <textarea id="reviewDisclaimerText" rows="3" placeholder="Describe the basis for the disclaimer…" oninput="liveUpdate()"></textarea>
+      </div>
+    </div>
+
+    <!-- ── COMPILATION sub-options ── -->
+    <div id="report-sub-compilation" class="report-sub-panel" style="display:none;">
+      <div class="report-sub-heading">Compilation Notes</div>
+      <div class="options-group">
+        <label class="option-pill">
+          <input type="radio" name="compilationType" value="normal" checked onchange="onCompilationTypeChange()"> Normal
+        </label>
+        <label class="option-pill">
+          <input type="radio" name="compilationType" value="insolvent" onchange="onCompilationTypeChange()"> Insolvent
+        </label>
+        <label class="option-pill">
+          <input type="radio" name="compilationType" value="other" onchange="onCompilationTypeChange()"> Add Other Matter
+        </label>
+      </div>
+      <div class="conditional field-group" id="compilation-insolvent-box">
+        <label>Insolvency Note</label>
+        <textarea id="compilationInsolventText" rows="3" placeholder="Describe the technical insolvency or going concern matter…" oninput="liveUpdate()"></textarea>
+      </div>
+      <div class="conditional field-group" id="compilation-other-box">
+        <label>Other Matter</label>
+        <textarea id="compilationOtherText" rows="3" placeholder="Describe the other matter to include…" oninput="liveUpdate()"></textarea>
+      </div>
     </div>
 
     <hr class="form-divider">
@@ -1318,6 +1412,79 @@ function updateEntityType() {
   // Legacy — kept for compatibility, delegates to selectEntity state
   liveUpdate();
 }
+
+// ── REPORT TYPE + SUBTYPE LOGIC ──────────────────────────────────────────────
+function onReportTypeChange() {
+  const type = getRadio('reportType');
+  document.getElementById('report-sub-audit').style.display       = (type === 'audit')       ? 'block' : 'none';
+  document.getElementById('report-sub-review').style.display      = (type === 'review')      ? 'block' : 'none';
+  document.getElementById('report-sub-compilation').style.display = (type === 'compilation') ? 'block' : 'none';
+  liveUpdate();
+}
+
+function onAuditTypeChange() {
+  const t = getRadio('auditType');
+  toggleVisible('audit-qualified-box',  t === 'qualified');
+  toggleVisible('audit-emphasis-box',   t === 'emphasis');
+  toggleVisible('audit-disclaimer-box', t === 'disclaimer');
+  toggleVisible('audit-other-box',      t === 'other');
+  liveUpdate();
+}
+
+function onReviewTypeChange() {
+  const t = getRadio('reviewType');
+  toggleVisible('review-qualified-box',  t === 'qualified');
+  toggleVisible('review-disclaimer-box', t === 'disclaimer');
+  liveUpdate();
+}
+
+function onCompilationTypeChange() {
+  const t = getRadio('compilationType');
+  toggleVisible('compilation-insolvent-box', t === 'insolvent');
+  toggleVisible('compilation-other-box',     t === 'other');
+  liveUpdate();
+}
+
+function toggleVisible(id, show) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('visible', show);
+}
+
+// Helper to read report sub-state for document generation
+function getReportSubState() {
+  const type = getRadio('reportType');
+  if (type === 'audit') {
+    const sub = getRadio('auditType');
+    return {
+      reportType: 'audit',
+      subType: sub,
+      qualifiedText:   document.getElementById('auditQualifiedText')?.value.trim()  || '',
+      emphasisText:    document.getElementById('auditEmphasisText')?.value.trim()   || '',
+      disclaimerText:  document.getElementById('auditDisclaimerText')?.value.trim() || '',
+      otherText:       document.getElementById('auditOtherText')?.value.trim()      || '',
+    };
+  }
+  if (type === 'review') {
+    const sub = getRadio('reviewType');
+    return {
+      reportType: 'review',
+      subType: sub,
+      qualifiedText:   document.getElementById('reviewQualifiedText')?.value.trim()  || '',
+      disclaimerText:  document.getElementById('reviewDisclaimerText')?.value.trim() || '',
+    };
+  }
+  // compilation
+  const sub = getRadio('compilationType');
+  return {
+    reportType: 'compilation',
+    subType: sub,
+    insolventText: document.getElementById('compilationInsolventText')?.value.trim() || '',
+    otherText:     document.getElementById('compilationOtherText')?.value.trim()     || '',
+  };
+}
+
+// Show correct sub-panel on load
+onReportTypeChange();
 
 addDirector();
 addDirector();
