@@ -755,17 +755,27 @@
         <label class="option-pill">
           <input type="radio" name="reviewType" value="qualified" onchange="onReviewTypeChange()"> Qualified
         </label>
-        <label class="option-pill">
-          <input type="radio" name="reviewType" value="disclaimer" onchange="onReviewTypeChange()"> Disclaimer
-        </label>
       </div>
       <div class="conditional field-group" id="review-qualified-box">
-        <label>Basis for Qualified Conclusion</label>
-        <textarea id="reviewQualifiedText" rows="3" placeholder="Describe the basis for the qualified conclusion…" oninput="liveUpdate()"></textarea>
-      </div>
-      <div class="conditional field-group" id="review-disclaimer-box">
-        <label>Basis for Disclaimer</label>
-        <textarea id="reviewDisclaimerText" rows="3" placeholder="Describe the basis for the disclaimer…" oninput="liveUpdate()"></textarea>
+        <div class="report-sub-heading" style="margin-top:6px;">Basis for Qualified Conclusion</div>
+        <div class="options-group">
+          <label class="option-pill">
+            <input type="radio" name="reviewQualifiedBasis" value="insolvent" checked onchange="onReviewQualifiedBasisChange()"> Insolvent (template)
+          </label>
+          <label class="option-pill">
+            <input type="radio" name="reviewQualifiedBasis" value="custom" onchange="onReviewQualifiedBasisChange()"> Custom (type your own)
+          </label>
+        </div>
+        <div class="conditional field-group" id="review-qualified-insolvent-box" style="margin-top:8px;">
+          <label>Accumulated Loss (R)</label>
+          <input type="text" id="reviewAccLoss" placeholder="e.g. 575385.26" oninput="liveUpdate()">
+          <label style="margin-top:10px;">Total Liabilities Exceed Assets By (R)</label>
+          <input type="text" id="reviewExcessLiab" placeholder="e.g. 781096.37" oninput="liveUpdate()">
+        </div>
+        <div class="conditional field-group" id="review-qualified-custom-box" style="margin-top:8px;">
+          <label>Custom Basis for Qualified Conclusion</label>
+          <textarea id="reviewQualifiedText" rows="3" placeholder="Describe the basis for the qualified conclusion…" oninput="liveUpdate()"></textarea>
+        </div>
       </div>
     </div>
 
@@ -1492,7 +1502,14 @@ function onAuditTypeChange() {
 function onReviewTypeChange() {
   const t = getRadio('reviewType');
   toggleVisible('review-qualified-box',  t === 'qualified');
-  toggleVisible('review-disclaimer-box', t === 'disclaimer');
+  if (t === 'qualified') onReviewQualifiedBasisChange();
+  liveUpdate();
+}
+
+function onReviewQualifiedBasisChange() {
+  const b = getRadio('reviewQualifiedBasis');
+  toggleVisible('review-qualified-insolvent-box', b === 'insolvent');
+  toggleVisible('review-qualified-custom-box',    b === 'custom');
   liveUpdate();
 }
 
@@ -1524,11 +1541,14 @@ function getReportSubState() {
   }
   if (type === 'review') {
     const sub = getRadio('reviewType');
+    const qualifiedBasis = getRadio('reviewQualifiedBasis');
     return {
       reportType: 'review',
       subType: sub,
+      qualifiedBasis: qualifiedBasis,
       qualifiedText:   document.getElementById('reviewQualifiedText')?.value.trim()  || '',
-      disclaimerText:  document.getElementById('reviewDisclaimerText')?.value.trim() || '',
+      reviewAccLoss:   document.getElementById('reviewAccLoss')?.value.trim()  || '',
+      reviewExcessLiab: document.getElementById('reviewExcessLiab')?.value.trim() || '',
     };
   }
   // compilation
@@ -2124,17 +2144,34 @@ function generateDoc() {
 
   // ── PAGE 3a: INDEPENDENT REVIEWER'S REPORT ──
   const reviewSubState = getReportSubState();
-  let reviewQualifiedSection = '';
-  if (reviewSubState.reportType === 'review' && reviewSubState.subType === 'qualified') {
-    reviewQualifiedSection = `
+  const isReviewQualified = reviewSubState.reportType === 'review' && reviewSubState.subType === 'qualified';
+
+  // Build Basis for Qualified Conclusion section
+  let reviewBasisSection = '';
+  if (isReviewQualified) {
+    if (reviewSubState.qualifiedBasis === 'insolvent') {
+      const rAccLoss = formatNumber(reviewSubState.reviewAccLoss) || '[ACCUMULATED LOSS]';
+      const rExcessLiab = formatNumber(reviewSubState.reviewExcessLiab) || '[EXCESS LIABILITIES]';
+      reviewBasisSection = `
+    <h3>Basis for Qualified Conclusion</h3>
+    <p>Please note that on ${yearEnd}, the company had an accumulated loss of R&nbsp;${rAccLoss} and that its total liabilities exceeded its assets with R&nbsp;${rExcessLiab}. Due to the accounting policy recorded in the financial statements, the entity will therefore be classified as factually insolvent. The financial statements were compiled on an accounting basis with a policy applicable on the matter of going concern. It is based on the fact that funds will be available to finance future operations and that the realisation of assets and the settling of debts, unsecure responsibilities and secure responsibilities will take place in the normal circumstances of business.</p>`;
+    } else {
+      reviewBasisSection = `
     <h3>Basis for Qualified Conclusion</h3>
     <p>${reviewSubState.qualifiedText || '[Describe the basis for the qualified conclusion]'}</p>`;
+    }
   }
-  let reviewDisclaimerSection = '';
-  if (reviewSubState.reportType === 'review' && reviewSubState.subType === 'disclaimer') {
-    reviewDisclaimerSection = `
-    <h3>Basis for Disclaimer</h3>
-    <p>${reviewSubState.disclaimerText || '[Describe the basis for the disclaimer]'}</p>`;
+
+  // Build Conclusion section — different wording for qualified vs unqualified
+  let reviewConclusionSection = '';
+  if (isReviewQualified) {
+    reviewConclusionSection = `
+    <h3>Qualified Conclusion</h3>
+    <p>Based on our review, except for the effect of the matter described in the Basis of the Qualified Conclusion paragraph nothing has come to our attention that causes us to believe that these financial statements of ${co} are not prepared, in all material respects, in accordance with <em>'International Financial Reporting Standards for Small and Medium-sized Entities'</em> and the requirements of the Companies Act of South Africa.</p>`;
+  } else {
+    reviewConclusionSection = `
+    <h3>Conclusion</h3>
+    <p>Based on our review, nothing has come to our attention that causes us to believe that these financial statements do not present fairly, in all material respects, (or do not give a true and fair view of) the financial position of ${co} as at ${yearEnd}, and (of) its financial performance and cash flows for the year then ended, in accordance with the <em>'International Financial Reporting Standards for Small and Medium-sized Entities'</em> and the requirements of the Companies Act of South Africa.</p>`;
   }
 
   const pageReview = `
@@ -2153,10 +2190,8 @@ function generateDoc() {
     <p>Our responsibility is to express a conclusion on these financial statements. We conducted our review in accordance with the <em>'International Standard on Review Engagements (ISRE) 2400 (Revised), Engagements to Review Historical Financial Statements (ISRE 2400 (Revised)). ISRE 2400 (Revised)'</em> requires us to conclude whether anything has come to our attention that causes us to believe that the financial statements, taken as a whole, are not prepared in all material respects in accordance with the applicable financial reporting framework. This Standard also requires us to comply with relevant ethical requirements.</p>
     <p>A review of financial statements in accordance with <em>ISRE 2400 (Revised)</em> is a limited assurance engagement. The independent reviewer performs procedures, primarily consisting of making inquiries of management and others within the entity, as appropriate, and applying analytical procedures, and evaluates the evidence obtained.</p>
     <p>The procedures performed in a review are substantially less than those performed in an audit conducted in accordance with International Standards on Auditing. Accordingly, we do not express an audit opinion on these financial statements.</p>
-    ${reviewQualifiedSection}
-    ${reviewDisclaimerSection}
-    <h3>Conclusion</h3>
-    <p>Based on our review, nothing has come to our attention that causes us to believe that these financial statements do not present fairly, in all material respects, (or do not give a true and fair view of) the financial position of ${co} as at ${yearEnd}, and (of) its financial performance and cash flows for the year then ended, in accordance with the <em>'International Financial Reporting Standards for Small and Medium-sized Entities'</em> and the requirements of the Companies Act of South Africa.</p>
+    ${reviewBasisSection}
+    ${reviewConclusionSection}
     <h3>Other Reports Required by the Companies Act</h3>
     <p>The annual financial statements include the ${pluralTerm}' Report as required by the Companies Act of South Africa. The ${pluralTerm.toLowerCase()} ${dirSingularPlural.isAre} responsible for ${pluralTerm}' Report. Our conclusion on the financial statements does not cover the ${pluralTerm}' Report and we do not express any form of assurance conclusion thereon.</p>
     <p>In connection with our independent review of the financial statements, we have read the ${pluralTerm}' Report and, in doing so, considered whether the ${pluralTerm}' Report is materially inconsistent with the financial statements or our knowledge obtained in the independent review, or otherwise appears to be materially misstated. If, based on the work we have performed, we conclude that there is a material misstatement of the ${pluralTerm}' Report, we will report that fact. We have nothing to report in this regard.</p>
